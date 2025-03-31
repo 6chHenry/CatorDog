@@ -51,7 +51,7 @@
       padding: 10px;
       border-radius: 8px;
       background-color: #f1f1f1;
-      display: inline-block;
+      display: none; /* 初始隐藏 */
     }
     .result-container p {
       font-size: 24px;
@@ -76,7 +76,9 @@
   <h1>Pet Classification App</h1>
 
   <div class="upload-container">
-    <label for="file-upload" class="upload-btn"><i class="fas fa-cloud-upload-alt"></i> Upload Your Pet Photo</label>
+    <label for="file-upload" class="upload-btn">
+      <i class="fas fa-cloud-upload-alt"></i> Upload Your Pet Photo
+    </label>
     <input type="file" id="file-upload" accept="image/*">
     <div class="image-preview" id="image-preview"></div>
   </div>
@@ -86,7 +88,7 @@
     <p>Classifying...</p>
   </div>
 
-  <div class="result-container" id="result-container" style="display: none;">
+  <div class="result-container" id="result-container">
     <p>Result: <span id="classification-result">Loading...</span></p>
   </div>
 
@@ -96,21 +98,36 @@
       if (file) {
         const reader = new FileReader();
         reader.onload = function(e) {
-          document.getElementById('image-preview').innerHTML = `<img src="${e.target.result}" alt="Preview" style="max-width: 100%; height: auto;">`;
+          document.getElementById('image-preview').innerHTML = 
+            `<img src="${e.target.result}" alt="Preview" style="max-width: 100%; height: auto;">`;
         };
         reader.readAsDataURL(file);
 
+        // 显示加载动画，隐藏结果
         document.getElementById('loading').style.display = 'block';
         document.getElementById('result-container').style.display = 'none';
 
-        // Simulate model prediction
-        setTimeout(() => {
-          // This is where the prediction logic will go
-          const result = Math.random() > 0.5 ? 'Dog' : 'Cat'; // Simulate prediction
+        // 创建 FormData 上传图片
+        const formData = new FormData();
+        formData.append("file", file);
+
+        fetch('/predict', {
+          method: 'POST',
+          body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+          // 隐藏加载动画，显示结果
           document.getElementById('loading').style.display = 'none';
           document.getElementById('result-container').style.display = 'block';
-          document.getElementById('classification-result').textContent = result;
-        }, 2000);
+          document.getElementById('classification-result').textContent = data.result;
+        })
+        .catch(error => {
+          console.error("Error:", error);
+          document.getElementById('loading').style.display = 'none';
+          document.getElementById('result-container').style.display = 'block';
+          document.getElementById('classification-result').textContent = "Error!";
+        });
       }
     });
   </script>
